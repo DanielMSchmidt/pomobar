@@ -103,7 +103,7 @@ impl Pomobar {
         // Process all pending timer messages
         while let Ok(msg) = self.timer_rx.try_recv() {
             match msg {
-                TimerMessage::StateChanged { title, state: _ } => {
+                TimerMessage::StateChanged { title } => {
                     self.update_tray_title(&title);
                     self.update_menu();
                 }

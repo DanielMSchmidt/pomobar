@@ -7,11 +7,11 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum AudioError {
     #[error("Failed to initialize audio output: {0}")]
-    StreamError(#[from] rodio::StreamError),
+    Stream(#[from] rodio::StreamError),
     #[error("Failed to play audio: {0}")]
-    PlayError(#[from] rodio::PlayError),
+    Play(#[from] rodio::PlayError),
     #[error("Failed to decode audio")]
-    DecodeError,
+    Decode,
 }
 
 pub struct AudioPlayer {
@@ -74,7 +74,7 @@ impl AudioPlayer {
     #[allow(dead_code)]
     fn play_from_bytes(&self, data: &'static [u8]) -> Result<(), AudioError> {
         let cursor = Cursor::new(data);
-        let source = Decoder::new(cursor).map_err(|_| AudioError::DecodeError)?;
+        let source = Decoder::new(cursor).map_err(|_| AudioError::Decode)?;
         let sink = Sink::try_new(&self.handle)?;
         sink.append(source);
         sink.detach();

@@ -165,20 +165,18 @@ pub fn build_menu(
     Ok((menu, items))
 }
 
-fn build_settings_submenu(
-    settings: &Settings,
-) -> Result<
-    (
-        Submenu,
-        HashMap<u32, CheckMenuItem>,
-        HashMap<u32, CheckMenuItem>,
-        HashMap<u32, CheckMenuItem>,
-        HashMap<u32, CheckMenuItem>,
-        CheckMenuItem,
-        CheckMenuItem,
-    ),
-    MenuError,
-> {
+/// Type alias for the settings submenu result to avoid clippy complexity warning.
+type SettingsSubmenuResult = (
+    Submenu,
+    HashMap<u32, CheckMenuItem>,
+    HashMap<u32, CheckMenuItem>,
+    HashMap<u32, CheckMenuItem>,
+    HashMap<u32, CheckMenuItem>,
+    CheckMenuItem,
+    CheckMenuItem,
+);
+
+fn build_settings_submenu(settings: &Settings) -> Result<SettingsSubmenuResult, MenuError> {
     let submenu = Submenu::new("⚙  Settings", true);
 
     // Pomodoro duration submenu

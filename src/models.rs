@@ -4,9 +4,10 @@ use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
 
 /// Timer state machine representing all possible states of the pomodoro timer.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum TimerState {
     /// No active timer, ready to start a pomodoro.
+    #[default]
     Idle,
     /// Pomodoro work session in progress.
     PomodoroActive {
@@ -28,12 +29,6 @@ pub enum TimerState {
     BreakFinished,
 }
 
-impl Default for TimerState {
-    fn default() -> Self {
-        Self::Idle
-    }
-}
-
 impl TimerState {
     /// Returns true if the timer is in an idle state (Idle or BreakFinished).
     pub fn is_idle(&self) -> bool {
@@ -41,6 +36,7 @@ impl TimerState {
     }
 
     /// Returns true if the timer is actively counting down.
+    #[cfg(test)]
     pub fn is_active(&self) -> bool {
         matches!(self, Self::PomodoroActive { .. } | Self::BreakActive { .. })
     }
@@ -89,6 +85,7 @@ impl TimerState {
     }
 
     /// Returns the remaining seconds if a timer is active.
+    #[cfg(test)]
     pub fn remaining_secs(&self) -> Option<u32> {
         match self {
             Self::PomodoroActive { remaining_secs, .. }
@@ -99,6 +96,7 @@ impl TimerState {
     }
 
     /// Returns the total seconds if a timer is active.
+    #[cfg(test)]
     pub fn total_secs(&self) -> Option<u32> {
         match self {
             Self::PomodoroActive { total_secs, .. }
@@ -165,6 +163,7 @@ impl Default for Session {
 
 impl Session {
     /// Creates a new session for the given date.
+    #[cfg(test)]
     pub fn new(date: NaiveDate) -> Self {
         Self {
             pomodoros_completed_today: 0,

@@ -11,10 +11,7 @@ use std::time::Duration;
 #[derive(Debug, Clone)]
 pub enum TimerMessage {
     /// Timer state has changed, UI needs update.
-    StateChanged {
-        title: String,
-        state: TimerState,
-    },
+    StateChanged { title: String },
     /// A timer completed, trigger notification/sound.
     Completed(CompletionEvent),
 }
@@ -42,10 +39,7 @@ pub fn run_timer_loop(app: Arc<Mutex<App>>, tx: Sender<TimerMessage>) {
             if changed {
                 // Send state update
                 let title = format_tray_title(&app.state);
-                Some(TimerMessage::StateChanged {
-                    title,
-                    state: app.state.clone(),
-                })
+                Some(TimerMessage::StateChanged { title })
             } else {
                 None
             }
