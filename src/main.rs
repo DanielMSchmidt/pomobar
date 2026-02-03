@@ -22,8 +22,6 @@ mod models;
 mod notifications;
 mod persistence;
 mod timer;
-#[allow(dead_code)]
-mod tray;
 
 use app::{App, CompletionEvent};
 use audio::AudioPlayer;
@@ -41,11 +39,7 @@ struct Pomobar {
 }
 
 impl Pomobar {
-    fn new(
-        app: Arc<Mutex<App>>,
-        tray: TrayIcon,
-        timer_rx: Receiver<TimerMessage>,
-    ) -> Self {
+    fn new(app: Arc<Mutex<App>>, tray: TrayIcon, timer_rx: Receiver<TimerMessage>) -> Self {
         // Audio is created on the main thread to avoid Send issues
         let audio = AudioPlayer::new().ok();
 
@@ -88,7 +82,10 @@ impl Pomobar {
         // Show notification if enabled
         if app.settings.notifications_enabled {
             match event {
-                CompletionEvent::PomodoroComplete { count, is_long_break } => {
+                CompletionEvent::PomodoroComplete {
+                    count,
+                    is_long_break,
+                } => {
                     if is_long_break {
                         notifications::notify_long_break_start(app.long_break_mins());
                     } else {
