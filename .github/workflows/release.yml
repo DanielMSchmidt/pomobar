@@ -1,0 +1,132 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+
+      - name: Build for Intel Mac
+        run: cargo build --release --target x86_64-apple-darwin
+
+      - name: Build for Apple Silicon
+        run: cargo build --release --target aarch64-apple-darwin
+
+      - name: Create universal binary
+        run: |
+          mkdir -p dist
+          lipo -create \
+            target/x86_64-apple-darwin/release/pomobar \
+            target/aarch64-apple-darwin/release/pomobar \
+            -output dist/pomobar
+
+      - name: Create tarball
+        run: |
+          cd dist
+          tar -czvf pomobar-${{ github.ref_name }}-macos.tar.gz pomobar
+          shasum -a 256 pomobar-${{ github.ref_name }}-macos.tar.gz > pomobar-${{ github.ref_name }}-macos.tar.gz.sha256
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pomobar-macos
+          path: dist/pomobar-${{ github.ref_name }}-macos.tar.gz*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: pomobar-macos
+          path: dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+
+  homebrew:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: pomobar-macos
+          path: dist
+
+      - name: Get version and SHA256
+        id: meta
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION_NUM="${VERSION#v}"
+          SHA=$(cat dist/pomobar-${{ github.ref_name }}-macos.tar.gz.sha256 | cut -d ' ' -f 1)
+          echo "version=$VERSION_NUM" >> $GITHUB_OUTPUT
+          echo "sha256=$SHA" >> $GITHUB_OUTPUT
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: danielmschmidt/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update formula
+        run: |
+          cat > homebrew-tap/Formula/pomobar.rb << 'EOF'
+          class Pomobar < Formula
+            desc "Native macOS menubar Pomodoro timer"
+            homepage "https://github.com/danielmschmidt/pomobar"
+            version "${{ steps.meta.outputs.version }}"
+            license "MIT"
+
+            on_macos do
+              url "https://github.com/danielmschmidt/pomobar/releases/download/${{ github.ref_name }}/pomobar-${{ github.ref_name }}-macos.tar.gz"
+              sha256 "${{ steps.meta.outputs.sha256 }}"
+            end
+
+            def install
+              bin.install "pomobar"
+            end
+
+            def caveats
+              <<~EOS
+                Pomobar is a menubar application. To start it:
+                  pomobar
+
+                To run at login, add Pomobar to your Login Items in System Settings.
+              EOS
+            end
+
+            test do
+              assert_predicate bin/"pomobar", :executable?
+            end
+          end
+          EOF
+
+      - name: Commit and push
+        run: |
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/pomobar.rb
+          git diff --staged --quiet || git commit -m "Update pomobar to ${{ steps.meta.outputs.version }}"
+          git push
