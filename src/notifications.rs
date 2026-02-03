@@ -1,53 +1,63 @@
 //! macOS system notifications for timer events.
 
 use notify_rust::Notification;
+use std::thread;
 
 /// Shows a notification when a pomodoro is completed.
+/// Runs in a background thread to avoid blocking.
 pub fn notify_pomodoro_complete(count: u32) {
-    let body = if count == 1 {
-        "Great work! You've completed 1 pomodoro today.\nTime for a break.".to_string()
-    } else {
-        format!(
-            "Great work! You've completed {} pomodoros today.\nTime for a break.",
-            count
-        )
-    };
+    thread::spawn(move || {
+        let body = if count == 1 {
+            "Great work! You've completed 1 pomodoro today.\nTime for a break.".to_string()
+        } else {
+            format!(
+                "Great work! You've completed {} pomodoros today.\nTime for a break.",
+                count
+            )
+        };
 
-    if let Err(e) = Notification::new()
-        .summary("Pomodoro Complete! 🍅")
-        .body(&body)
-        .sound_name("default")
-        .show()
-    {
-        eprintln!("Failed to show notification: {}", e);
-    }
+        if let Err(e) = Notification::new()
+            .summary("Pomodoro Complete! 🍅")
+            .body(&body)
+            .sound_name("default")
+            .show()
+        {
+            eprintln!("Failed to show notification: {}", e);
+        }
+    });
 }
 
 /// Shows a notification when a break is completed.
+/// Runs in a background thread to avoid blocking.
 pub fn notify_break_complete() {
-    if let Err(e) = Notification::new()
-        .summary("Break Over! ☕")
-        .body("Ready to start another pomodoro?")
-        .sound_name("default")
-        .show()
-    {
-        eprintln!("Failed to show notification: {}", e);
-    }
+    thread::spawn(|| {
+        if let Err(e) = Notification::new()
+            .summary("Break Over! ☕")
+            .body("Ready to start another pomodoro?")
+            .sound_name("default")
+            .show()
+        {
+            eprintln!("Failed to show notification: {}", e);
+        }
+    });
 }
 
 /// Shows a notification when a long break starts.
+/// Runs in a background thread to avoid blocking.
 pub fn notify_long_break_start(duration_mins: u32) {
-    if let Err(e) = Notification::new()
-        .summary("Long Break Time! 🎉")
-        .body(&format!(
-            "You've earned a {} minute break. Great job staying focused!",
-            duration_mins
-        ))
-        .sound_name("default")
-        .show()
-    {
-        eprintln!("Failed to show notification: {}", e);
-    }
+    thread::spawn(move || {
+        if let Err(e) = Notification::new()
+            .summary("Long Break Time! 🎉")
+            .body(&format!(
+                "You've earned a {} minute break. Great job staying focused!",
+                duration_mins
+            ))
+            .sound_name("default")
+            .show()
+        {
+            eprintln!("Failed to show notification: {}", e);
+        }
+    });
 }
 
 #[cfg(test)]
