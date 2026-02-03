@@ -1,9 +1,10 @@
 //! Menu event handling.
 
 use crate::app::{App, CompletionEvent};
+use crate::launch_agent;
 use crate::menu::{
-    MenuItems, ID_COMPLETE, ID_NOTIF_TOGGLE, ID_PAUSE, ID_QUIT, ID_RESET_COUNT, ID_RESUME,
-    ID_SKIP_BREAK, ID_SOUND_TOGGLE, ID_START, ID_STOP,
+    MenuItems, ID_COMPLETE, ID_LOGIN_TOGGLE, ID_NOTIF_TOGGLE, ID_PAUSE, ID_QUIT, ID_RESET_COUNT,
+    ID_RESUME, ID_SKIP_BREAK, ID_SOUND_TOGGLE, ID_START, ID_STOP,
 };
 use muda::MenuEvent;
 
@@ -64,6 +65,17 @@ pub fn handle_menu_event(app: &mut App, items: &MenuItems, event: MenuEvent) -> 
             items
                 .notif_toggle
                 .set_checked(app.settings.notifications_enabled);
+            EventResult::Continue
+        }
+        ID_LOGIN_TOGGLE => {
+            let new_state = !app.settings.launch_at_login;
+            if launch_agent::set_enabled(new_state).is_ok() {
+                app.update_setting(|s| s.launch_at_login = new_state);
+                items.login_toggle.set_checked(new_state);
+            } else {
+                // Revert the checkbox if the operation failed
+                items.login_toggle.set_checked(app.settings.launch_at_login);
+            }
             EventResult::Continue
         }
         ID_RESET_COUNT => {

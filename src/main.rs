@@ -17,6 +17,7 @@ use winit::window::WindowId;
 mod app;
 mod audio;
 mod event;
+mod launch_agent;
 mod menu;
 mod models;
 mod notifications;

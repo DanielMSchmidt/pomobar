@@ -122,6 +122,9 @@ pub struct Settings {
     pub sound_enabled: bool,
     /// Whether to show system notifications.
     pub notifications_enabled: bool,
+    /// Whether to launch the app at login.
+    #[serde(default)]
+    pub launch_at_login: bool,
 }
 
 impl Default for Settings {
@@ -133,6 +136,7 @@ impl Default for Settings {
             pomodoros_for_long_break: 4,
             sound_enabled: true,
             notifications_enabled: true,
+            launch_at_login: false,
         }
     }
 }

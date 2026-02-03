@@ -19,6 +19,7 @@ pub const ID_COMPLETE: &str = "complete";
 pub const ID_SKIP_BREAK: &str = "skip_break";
 pub const ID_SOUND_TOGGLE: &str = "sound_toggle";
 pub const ID_NOTIF_TOGGLE: &str = "notif_toggle";
+pub const ID_LOGIN_TOGGLE: &str = "login_toggle";
 pub const ID_RESET_COUNT: &str = "reset_count";
 pub const ID_QUIT: &str = "quit";
 
@@ -41,6 +42,7 @@ pub struct MenuItems {
     pub skip_break: MenuItem,
     pub sound_toggle: CheckMenuItem,
     pub notif_toggle: CheckMenuItem,
+    pub login_toggle: CheckMenuItem,
     pub pomo_checks: HashMap<u32, CheckMenuItem>,
     pub short_checks: HashMap<u32, CheckMenuItem>,
     pub long_checks: HashMap<u32, CheckMenuItem>,
@@ -134,7 +136,7 @@ pub fn build_menu(
     menu.append(&PredefinedMenuItem::separator())?;
 
     // Settings submenu
-    let (settings_menu, pomo_checks, short_checks, long_checks, thresh_checks, sound_toggle, notif_toggle) =
+    let (settings_menu, pomo_checks, short_checks, long_checks, thresh_checks, sound_toggle, notif_toggle, login_toggle) =
         build_settings_submenu(settings)?;
     menu.append(&settings_menu)?;
 
@@ -156,6 +158,7 @@ pub fn build_menu(
         skip_break,
         sound_toggle,
         notif_toggle,
+        login_toggle,
         pomo_checks,
         short_checks,
         long_checks,
@@ -172,6 +175,7 @@ type SettingsSubmenuResult = (
     HashMap<u32, CheckMenuItem>,
     HashMap<u32, CheckMenuItem>,
     HashMap<u32, CheckMenuItem>,
+    CheckMenuItem,
     CheckMenuItem,
     CheckMenuItem,
 );
@@ -277,6 +281,15 @@ fn build_settings_submenu(settings: &Settings) -> Result<SettingsSubmenuResult, 
     );
     submenu.append(&notif_toggle)?;
 
+    let login_toggle = CheckMenuItem::with_id(
+        MenuId::new(ID_LOGIN_TOGGLE),
+        "Start at Login",
+        true,
+        settings.launch_at_login,
+        None::<Accelerator>,
+    );
+    submenu.append(&login_toggle)?;
+
     submenu.append(&PredefinedMenuItem::separator())?;
 
     let reset = MenuItem::with_id(
@@ -295,6 +308,7 @@ fn build_settings_submenu(settings: &Settings) -> Result<SettingsSubmenuResult, 
         thresh_checks,
         sound_toggle,
         notif_toggle,
+        login_toggle,
     ))
 }
 

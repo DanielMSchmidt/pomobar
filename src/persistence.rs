@@ -182,6 +182,7 @@ mod tests {
             pomodoros_for_long_break: 3,
             sound_enabled: false,
             notifications_enabled: true,
+            launch_at_login: false,
         };
         db.save_settings(&custom_settings).unwrap();
 
