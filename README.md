@@ -9,9 +9,7 @@ A native macOS menubar Pomodoro timer built with Rust. Lightweight, distraction-
 
 ## Screenshots
 
-<p align="center">
-  <img src="screenshots/menubar.png" alt="Pomobar in menubar" width="400">
-</p>
+<img src="screenshots/menubar.png" alt="Pomobar in menubar" width="400">
 
 
 ## Features
