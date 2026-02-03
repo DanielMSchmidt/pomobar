@@ -22,6 +22,7 @@ mod models;
 mod notifications;
 mod persistence;
 mod timer;
+#[allow(dead_code)]
 mod tray;
 
 use app::{App, CompletionEvent};
@@ -191,11 +192,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         menu::build_menu(&app_lock.state, &app_lock.session, &app_lock.settings)?
     };
 
-    // Create tray icon
-    let icon = tray::load_icon()?;
+    // Create tray icon (no icon image, just use title text on macOS)
     let tray = TrayIconBuilder::new()
         .with_menu(Box::new(built_menu))
-        .with_icon(icon)
         .with_title("🍅")
         .with_tooltip("Pomobar - Pomodoro Timer")
         .build()?;
