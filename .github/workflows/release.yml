@@ -96,7 +96,6 @@ jobs:
             desc "Native macOS menubar Pomodoro timer"
             homepage "https://github.com/danielmschmidt/pomobar"
             url "https://github.com/danielmschmidt/pomobar/releases/download/${{ github.ref_name }}/pomobar-${{ github.ref_name }}-macos.tar.gz"
-            version "${{ steps.meta.outputs.version }}"
             sha256 "${{ steps.meta.outputs.sha256 }}"
             license "MIT"
 
