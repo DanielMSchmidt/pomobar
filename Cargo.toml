@@ -28,7 +28,7 @@ serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 
 # App directories
-directories = "5"
+directories = "6"
 
 # Image loading for tray icon
 image = "0.25"
