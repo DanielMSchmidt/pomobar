@@ -39,7 +39,7 @@ A native macOS menubar Pomodoro timer built with Rust. Lightweight, distraction-
 
 ```bash
 brew tap danielmschmidt/tap
-brew install pomobar
+brew install --cask pomobar
 ```
 
 ### From Source
@@ -49,16 +49,19 @@ brew install pomobar
 git clone https://github.com/danielmschmidt/pomobar.git
 cd pomobar
 
-# Build and install
+# Build and package as a macOS app
 cargo build --release
-cp target/release/pomobar /usr/local/bin/
+./scripts/package-macos-app.sh target/release/pomobar <version> dist
+cp -R dist/Pomobar.app /Applications/
 ```
 
 ## Usage
 
-Simply run `pomobar` from your terminal or add it to your Login Items to start automatically.
+Launch Pomobar from Applications/Launchpad, or run it from Terminal:
 
 ```bash
+open -a Pomobar
+# or, if installed via Homebrew cask:
 pomobar
 ```
 

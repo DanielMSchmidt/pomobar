@@ -33,17 +33,23 @@ jobs:
             target/aarch64-apple-darwin/release/pomobar \
             -output dist/pomobar
 
-      - name: Create tarball
+      - name: Create app bundle
+        run: |
+          chmod +x scripts/package-macos-app.sh
+          VERSION="${GITHUB_REF_NAME#v}"
+          ./scripts/package-macos-app.sh dist/pomobar "${VERSION}" dist
+
+      - name: Create zip archive
         run: |
           cd dist
-          tar -czvf pomobar-${{ github.ref_name }}-macos.tar.gz pomobar
-          shasum -a 256 pomobar-${{ github.ref_name }}-macos.tar.gz > pomobar-${{ github.ref_name }}-macos.tar.gz.sha256
+          ditto -c -k --sequesterRsrc --keepParent Pomobar.app pomobar-${{ github.ref_name }}-macos.zip
+          shasum -a 256 pomobar-${{ github.ref_name }}-macos.zip > pomobar-${{ github.ref_name }}-macos.zip.sha256
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: pomobar-macos
-          path: dist/pomobar-${{ github.ref_name }}-macos.tar.gz*
+          path: dist/pomobar-${{ github.ref_name }}-macos.zip*
 
   release:
     needs: build
@@ -78,7 +84,7 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
-          SHA=$(cat dist/pomobar-${{ github.ref_name }}-macos.tar.gz.sha256 | cut -d ' ' -f 1)
+          SHA=$(cat dist/pomobar-${{ github.ref_name }}-macos.zip.sha256 | cut -d ' ' -f 1)
           echo "version=$VERSION_NUM" >> $GITHUB_OUTPUT
           echo "sha256=$SHA" >> $GITHUB_OUTPUT
 
@@ -89,42 +95,37 @@ jobs:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           path: homebrew-tap
 
-      - name: Update formula
+      - name: Update cask
         run: |
-          cat > homebrew-tap/Formula/pomobar.rb << EOF
-          class Pomobar < Formula
+          mkdir -p homebrew-tap/Casks
+          cat > homebrew-tap/Casks/pomobar.rb << EOF
+          cask "pomobar" do
+            version "${{ steps.meta.outputs.version }}"
+            sha256 "${{ steps.meta.outputs.sha256 }}"
+
+            url "https://github.com/danielmschmidt/pomobar/releases/download/v#{version}/pomobar-v#{version}-macos.zip"
+            name "Pomobar"
             desc "Native macOS menubar Pomodoro timer"
             homepage "https://github.com/danielmschmidt/pomobar"
-            url "https://github.com/danielmschmidt/pomobar/releases/download/${{ github.ref_name }}/pomobar-${{ github.ref_name }}-macos.tar.gz"
-            sha256 "${{ steps.meta.outputs.sha256 }}"
-            license "MIT"
 
-            depends_on :macos
+            depends_on macos: ">= :catalina"
 
-            def install
-              bin.install "pomobar"
-            end
+            app "Pomobar.app"
+            binary "#{appdir}/Pomobar.app/Contents/MacOS/pomobar", target: "pomobar"
 
-            def caveats
-              <<~EOS
-                Pomobar is a menubar application. To start it:
-                  pomobar
-
-                To run at login, enable "Start at Login" in the Settings menu.
-              EOS
-            end
-
-            test do
-              assert_predicate bin/"pomobar", :executable?
-            end
+            zap trash: [
+              "~/Library/Application Support/com.pomobar.Pomobar",
+              "~/Library/LaunchAgents/com.pomobar.plist",
+            ]
           end
           EOF
+          rm -f homebrew-tap/Formula/pomobar.rb
 
       - name: Commit and push
         run: |
           cd homebrew-tap
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/pomobar.rb
-          git diff --staged --quiet || git commit -m "Update pomobar to ${{ steps.meta.outputs.version }}"
+          git add -A Casks/pomobar.rb Formula/pomobar.rb
+          git diff --staged --quiet || git commit -m "Update pomobar cask to ${{ steps.meta.outputs.version }}"
           git push
