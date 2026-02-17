@@ -33,23 +33,17 @@ jobs:
             target/aarch64-apple-darwin/release/pomobar \
             -output dist/pomobar
 
-      - name: Create app bundle
-        run: |
-          chmod +x scripts/package-macos-app.sh
-          VERSION="${GITHUB_REF_NAME#v}"
-          ./scripts/package-macos-app.sh dist/pomobar "${VERSION}" dist
-
-      - name: Create zip archive
+      - name: Create tarball
         run: |
           cd dist
-          ditto -c -k --sequesterRsrc --keepParent Pomobar.app pomobar-${{ github.ref_name }}-macos.zip
-          shasum -a 256 pomobar-${{ github.ref_name }}-macos.zip > pomobar-${{ github.ref_name }}-macos.zip.sha256
+          tar -czvf pomobar-${{ github.ref_name }}-macos.tar.gz pomobar
+          shasum -a 256 pomobar-${{ github.ref_name }}-macos.tar.gz > pomobar-${{ github.ref_name }}-macos.tar.gz.sha256
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: pomobar-macos
-          path: dist/pomobar-${{ github.ref_name }}-macos.zip*
+          path: dist/pomobar-${{ github.ref_name }}-macos.tar.gz*
 
   release:
     needs: build
@@ -84,7 +78,7 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
-          SHA=$(cat dist/pomobar-${{ github.ref_name }}-macos.zip.sha256 | cut -d ' ' -f 1)
+          SHA=$(cat dist/pomobar-${{ github.ref_name }}-macos.tar.gz.sha256 | cut -d ' ' -f 1)
           echo "version=$VERSION_NUM" >> $GITHUB_OUTPUT
           echo "sha256=$SHA" >> $GITHUB_OUTPUT
 
@@ -95,37 +89,44 @@ jobs:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           path: homebrew-tap
 
-      - name: Update cask
+      - name: Update formula
         run: |
-          mkdir -p homebrew-tap/Casks
-          cat > homebrew-tap/Casks/pomobar.rb << EOF
-          cask "pomobar" do
-            version "${{ steps.meta.outputs.version }}"
-            sha256 "${{ steps.meta.outputs.sha256 }}"
-
-            url "https://github.com/danielmschmidt/pomobar/releases/download/v#{version}/pomobar-v#{version}-macos.zip"
-            name "Pomobar"
-            desc "Native menubar Pomodoro timer"
+          cat > homebrew-tap/Formula/pomobar.rb << 'EOF'
+          class Pomobar < Formula
+            desc "Native macOS menubar Pomodoro timer"
             homepage "https://github.com/danielmschmidt/pomobar"
+            version "${{ steps.meta.outputs.version }}"
+            license "MIT"
 
-            depends_on macos: ">= :catalina"
+            on_macos do
+              url "https://github.com/danielmschmidt/pomobar/releases/download/${{ github.ref_name }}/pomobar-${{ github.ref_name }}-macos.tar.gz"
+              sha256 "${{ steps.meta.outputs.sha256 }}"
+            end
 
-            app "Pomobar.app"
-            binary "#{appdir}/Pomobar.app/Contents/MacOS/pomobar", target: "pomobar"
+            def install
+              bin.install "pomobar"
+            end
 
-            zap trash: [
-              "~/Library/Application Support/com.pomobar.Pomobar",
-              "~/Library/LaunchAgents/com.pomobar.plist",
-            ]
+            def caveats
+              <<~EOS
+                Pomobar is a menubar application. To start it:
+                  pomobar
+
+                To run at login, add Pomobar to your Login Items in System Settings.
+              EOS
+            end
+
+            test do
+              assert_predicate bin/"pomobar", :executable?
+            end
           end
           EOF
-          rm -f homebrew-tap/Formula/pomobar.rb
 
       - name: Commit and push
         run: |
           cd homebrew-tap
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A Casks/pomobar.rb Formula/pomobar.rb
-          git diff --staged --quiet || git commit -m "Update pomobar cask to ${{ steps.meta.outputs.version }}"
+          git add Formula/pomobar.rb
+          git diff --staged --quiet || git commit -m "Update pomobar to ${{ steps.meta.outputs.version }}"
           git push
