@@ -105,7 +105,7 @@ jobs:
 
             url "https://github.com/danielmschmidt/pomobar/releases/download/v#{version}/pomobar-v#{version}-macos.zip"
             name "Pomobar"
-            desc "Native macOS menubar Pomodoro timer"
+            desc "Native menubar Pomodoro timer"
             homepage "https://github.com/danielmschmidt/pomobar"
 
             depends_on macos: ">= :catalina"
