@@ -14,7 +14,7 @@ muda = "0.15"
 winit = "0.30"
 
 # Audio
-rodio = "0.19"
+rodio = "0.22"
 
 # Notifications
 notify-rust = "4"
