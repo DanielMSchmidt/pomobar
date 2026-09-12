@@ -7,7 +7,7 @@ authors = ["Daniel Schmidt"]
 
 [dependencies]
 # System tray
-tray-icon = "0.19"
+tray-icon = "0.25"
 muda = "0.15"
 
 # Event loop (required for tray on macOS)
